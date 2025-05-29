@@ -45,7 +45,6 @@ if CLIENT then
     local rolllast = 0
     local lerpyderpy2 = 0
     
-    local ply = player()
     local slidingct = 0
     local blocksliding = false
     local wallrunning = 0
@@ -104,9 +103,9 @@ if CLIENT then
         swayLeft = math.clamp(swayLeft*0.995,0,speedFrac)
         swayRight = math.clamp(swayRight*0.995,0,speedFrac)
         
-        local vel = ply:getVelocity()/53
+        local vel = owner():getVelocity()/53
         
-        if ply:isCrouching() and ply:isOnGround() then
+        if owner():isCrouching() and owner():isOnGround() then
             if (vel:getLength()*53>=200) and blocksliding != true then
                 blocksliding = true
                 slidingct = timer.curtime()
@@ -114,27 +113,22 @@ if CLIENT then
             wallruntry = 0
             wallrun = 0
         else
-            --if not ply:isOnGround() then
-                if input.isKeyDown(KEY.A) then
-                    wallruntry = -1
-                elseif input.isKeyDown(KEY.D) then
-                    wallruntry = 1
+            if input.isKeyDown(KEY.A) then
+                wallruntry = -1
+            elseif input.isKeyDown(KEY.D) then
+                wallruntry = 1
+            else
+                wallruntry = 0
+                wallrun = 0
+            end
+            if wallruntry != 0 then
+                local tr = trace.line(owner():getPos()+Vector(0,0,15), owner():getPos()+Vector(0,0,15)+owner():getEyeAngles():getRight()*wallruntry*25, nil, nil, nil, false)
+                if tr.Hit then
+                    wallrun = wallruntry
                 else
-                    wallruntry = 0
                     wallrun = 0
                 end
-                if wallruntry != 0 then
-                    local tr = trace.line(owner():getPos()+Vector(0,0,15), owner():getPos()+Vector(0,0,15)+owner():getEyeAngles():getRight()*wallruntry*25, nil, nil, nil, false)
-                    if tr.Hit then
-                        wallrun = wallruntry
-                    else
-                        wallrun = 0
-                    end
-                end
-            --else
-                --wallruntry = 0
-                --wallrun = 0
-            --end
+            end
             blocksliding = false
             slidingct = timer.curtime()-10
         end
@@ -147,9 +141,9 @@ if CLIENT then
         wallrunninglast = wallrunning
         if wallrunning == 0 then
             if vel:getLength() > 0 then
-                local diff = (ply:getLocalVelocity() - ply:getAimVector()):getAngle().yaw
+                local diff = (owner():getLocalVelocity() - owner():getAimVector()):getAngle().yaw
                 local diff2 = ((diff + 180) % 360) - 180*(input.isKeyDown(KEY.D) and -1 or (input.isKeyDown(KEY.A) and 2 or 1))
-                roll = math.clamp(diff2 * 1 * vel:getLength()*0.1 + 35*(1-math.clamp(-10+(timer.curtime()-slidingct)*15,0,1)) + (ply:isOnGround() and sway or 0), -15, 15) -- adjust multiplier and clamp to taste
+                roll = math.clamp(diff2 * 1 * vel:getLength()*0.1 + 35*(1-math.clamp(-10+(timer.curtime()-slidingct)*15,0,1)) + (owner():isOnGround() and sway or 0), -15, 15) -- adjust multiplier and clamp to taste
             else
                 roll = 0
             end
@@ -169,8 +163,11 @@ if CLIENT then
         root:setAngles(owner():getEyeAngles())
         handParent:setAngles(root:localToWorldAngles(Angle(-35,15,70)+Angle(65*(math.clamp(-5+(timer.curtime()-slidingct)*5,0,1)),0,0)))
         
-        handParentLeft:setAngles(root:localToWorldAngles(Angle(15-100*swayLeft*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,-5,-10+rolllast)))
-        handParentRight:setAngles(root:localToWorldAngles(Angle(15-100*swayRight*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,5,10+rolllast)))
+        swayLeft2 = (owner():isOnGround() and swayLeft or 0)
+        swayRight2 = (owner():isOnGround() and swayRight or 0)
+        
+        handParentLeft:setAngles(root:localToWorldAngles(Angle(15-100*swayLeft2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,-5,-10+rolllast)))
+        handParentRight:setAngles(root:localToWorldAngles(Angle(15-100*swayRight2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,5,10+rolllast)))
         
         return {
             origin = player():getShootPos(),
