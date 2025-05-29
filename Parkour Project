@@ -7,6 +7,11 @@ if CLIENT then
     
     ----- CONFIG -----
     
+    local canWallRun = true
+    local canSlide = true
+    
+    local showArms = true
+    
     local hideElements = {
         ["CHudHealth"]      = false,
         ["CHudBattery"]     = false,
@@ -50,29 +55,29 @@ if CLIENT then
     local wallrunning = 0
     local wallrunninglast = 0
     
-    root = hologram.create(chip():getPos()+Vector(0,0,0), chip():localToWorldAngles(Angle(0,0,0)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
-    handParent = hologram.create(root:localToWorld(Vector(0,0,0)), root:localToWorldAngles(Angle(45,90,90)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
-    hand = hologram.create(handParent:localToWorld(Vector(7,-52,12)), handParent:localToWorldAngles(Angle(0,180,140)), owner():getModel(), Vector(1))
-    handParent:setParent(root)
-    hand:setParent(handParent)
-    hand:setClip(1, true, Vector(0,5,75), Vector(0,1,0.2), hand)
-    
-    handParentLeft = hologram.create(root:localToWorld(Vector(0,0,-5)), root:localToWorldAngles(Angle(-25,-10,-8)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
-    handLeft = hologram.create(handParentLeft:localToWorld(Vector(-28,-22,-28)), handParentLeft:localToWorldAngles(Angle(-15,-45,-35)), owner():getModel(), Vector(1))
-    handParentLeft:setParent(root)
-    handLeft:setParent(handParentLeft)
-    handLeft:setClip(1, true, Vector(0,5,75), Vector(0,1,0.2), handLeft)
-    
-    handParentRight = hologram.create(root:localToWorld(Vector(0,0,-5)), root:localToWorldAngles(Angle(-25,10,8)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
-    handRight = hologram.create(handParentRight:localToWorld(Vector(-28,22,-28)), handParentRight:localToWorldAngles(Angle(-15,45,35)), owner():getModel(), Vector(1))
-    handParentRight:setParent(root)
-    handRight:setParent(handParentRight)
-    handRight:setClip(1, true, Vector(0,-5,75), Vector(0,-1,0.2), handRight)
-    
+    if showArms then
+        root = hologram.create(chip():getPos()+Vector(0,0,0), chip():localToWorldAngles(Angle(0,0,0)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
+        handParent = hologram.create(root:localToWorld(Vector(0,0,0)), root:localToWorldAngles(Angle(45,90,90)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
+        hand = hologram.create(handParent:localToWorld(Vector(7,-52,12)), handParent:localToWorldAngles(Angle(0,180,140)), owner():getModel(), Vector(1))
+        handParent:setParent(root)
+        hand:setParent(handParent)
+        hand:setClip(1, true, Vector(0,5,75), Vector(0,1,0.2), hand)
+        
+        handParentLeft = hologram.create(root:localToWorld(Vector(0,0,-5)), root:localToWorldAngles(Angle(-25,-10,-8)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
+        handLeft = hologram.create(handParentLeft:localToWorld(Vector(-28,-22,-28)), handParentLeft:localToWorldAngles(Angle(-15,-45,-35)), owner():getModel(), Vector(1))
+        handParentLeft:setParent(root)
+        handLeft:setParent(handParentLeft)
+        handLeft:setClip(1, true, Vector(0,5,75), Vector(0,1,0.2), handLeft)
+        
+        handParentRight = hologram.create(root:localToWorld(Vector(0,0,-5)), root:localToWorldAngles(Angle(-25,10,8)), "models/hunter/blocks/cube025x025x025.mdl", Vector(0))
+        handRight = hologram.create(handParentRight:localToWorld(Vector(-28,22,-28)), handParentRight:localToWorldAngles(Angle(-15,45,35)), owner():getModel(), Vector(1))
+        handParentRight:setParent(root)
+        handRight:setParent(handParentRight)
+        handRight:setClip(1, true, Vector(0,-5,75), Vector(0,-1,0.2), handRight)
+    end
     
     local walkSpeed = 200
     local runSpeed = 400
-    local stepLength = 50
     
     local stepSide = 0
     local swayLeft = 0
@@ -106,28 +111,33 @@ if CLIENT then
         local vel = owner():getVelocity()/53
         
         if owner():isCrouching() and owner():isOnGround() then
-            if (vel:getLength()*53>=200) and blocksliding != true then
+            if (vel:getLength()*53>=200) and blocksliding != true and canSlide then
                 blocksliding = true
                 slidingct = timer.curtime()
             end
             wallruntry = 0
             wallrun = 0
         else
-            if input.isKeyDown(KEY.A) then
-                wallruntry = -1
-            elseif input.isKeyDown(KEY.D) then
-                wallruntry = 1
+            if canWallRun then
+                if input.isKeyDown(KEY.A) then
+                    wallruntry = -1
+                elseif input.isKeyDown(KEY.D) then
+                    wallruntry = 1
+                else
+                    wallruntry = 0
+                    wallrun = 0
+                end
+                if wallruntry != 0 then
+                    local tr = trace.line(owner():getPos()+Vector(0,0,15), owner():getPos()+Vector(0,0,15)+owner():getEyeAngles():getRight()*wallruntry*25, nil, nil, nil, false)
+                    if tr.Hit then
+                        wallrun = wallruntry
+                    else
+                        wallrun = 0
+                    end
+                end
             else
                 wallruntry = 0
                 wallrun = 0
-            end
-            if wallruntry != 0 then
-                local tr = trace.line(owner():getPos()+Vector(0,0,15), owner():getPos()+Vector(0,0,15)+owner():getEyeAngles():getRight()*wallruntry*25, nil, nil, nil, false)
-                if tr.Hit then
-                    wallrun = wallruntry
-                else
-                    wallrun = 0
-                end
             end
             blocksliding = false
             slidingct = timer.curtime()-10
@@ -159,15 +169,17 @@ if CLIENT then
         
         ang = Angle(player():getEyeAngles().pitch,player():getEyeAngles().yaw,rolllast)
         
-        root:setPos(owner():getShootPos())
-        root:setAngles(owner():getEyeAngles())
-        handParent:setAngles(root:localToWorldAngles(Angle(-35,15,70)+Angle(65*(math.clamp(-5+(timer.curtime()-slidingct)*5,0,1)),0,0)))
-        
-        swayLeft2 = (owner():isOnGround() and swayLeft or 0)
-        swayRight2 = (owner():isOnGround() and swayRight or 0)
-        
-        handParentLeft:setAngles(root:localToWorldAngles(Angle(15-100*swayLeft2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,-5,-10+rolllast)))
-        handParentRight:setAngles(root:localToWorldAngles(Angle(15-100*swayRight2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,5,10+rolllast)))
+        if showArms then
+            root:setPos(owner():getShootPos())
+            root:setAngles(owner():getEyeAngles())
+            handParent:setAngles(root:localToWorldAngles(Angle(-35,15,70)+Angle(65*(math.clamp(-5+(timer.curtime()-slidingct)*5,0,1)),0,0)))
+            
+            swayLeft2 = (owner():isOnGround() and swayLeft or 0)
+            swayRight2 = (owner():isOnGround() and swayRight or 0)
+            
+            handParentLeft:setAngles(root:localToWorldAngles(Angle(15-100*swayLeft2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,-5,-10+rolllast)))
+            handParentRight:setAngles(root:localToWorldAngles(Angle(15-100*swayRight2*speedFrac*(1+0.5*math.clamp(vel2*0.001,0,1)) - owner():getEyeAngles().pitch*0.5,5,10+rolllast)))
+        end
         
         return {
             origin = player():getShootPos(),
