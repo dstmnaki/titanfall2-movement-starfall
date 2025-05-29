@@ -8,14 +8,14 @@ if CLIENT then
     ----- CONFIG -----
     
     local hideElements = {
-        ["CHudHealth"]      = true,
-        ["CHudBattery"]     = true,
+        ["CHudHealth"]      = false,
+        ["CHudBattery"]     = false,
         
-        ["CHudAmmo"]        = true,
+        ["CHudAmmo"]        = false,
         
         ["CHudCrosshair"]   = false,
         ["CHudChat"]        = false,
-        ["CHudDeathNotice"] = true,
+        ["CHudDeathNotice"] = false,
     }
     
     ------ CODE ------
@@ -140,10 +140,10 @@ if CLIENT then
         end
         wallrunninglast = wallrunning
         if wallrunning == 0 then
-            if vel:getLength() > 0 then
+            if vel:getLength() > 0 and owner():getLocalVelocity().x > 0 or input.isKeyDown(KEY.D) or input.isKeyDown(KEY.A) then
                 local diff = (owner():getLocalVelocity() - owner():getAimVector()):getAngle().yaw
                 local diff2 = ((diff + 180) % 360) - 180*(input.isKeyDown(KEY.D) and -1 or (input.isKeyDown(KEY.A) and 2 or 1))
-                roll = math.clamp(diff2 * 1 * vel:getLength()*0.1 + 35*(1-math.clamp(-10+(timer.curtime()-slidingct)*15,0,1)) + (owner():isOnGround() and sway or 0), -15, 15) -- adjust multiplier and clamp to taste
+                roll = math.clamp(diff2 * 1 * vel:getLength()*0.1*(owner():isOnGround() and 1 or 0) + 35*(1-math.clamp(-10+(timer.curtime()-slidingct)*15,0,1)) + (owner():isOnGround() and sway or 0), -15, 15) -- adjust multiplier and clamp to taste
             else
                 roll = 0
             end
